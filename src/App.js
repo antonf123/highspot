@@ -1,4 +1,10 @@
-import React, { useEffect, useReducer, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useReducer,
+  useRef,
+  useCallback,
+} from "react";
 import axios from "axios";
 import Cards from "./components/Cards";
 import Search from "./components/Search";
@@ -10,6 +16,16 @@ import "./App.scss";
  */
 function App() {
   let scrollTriggerRef = useRef(null);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    const init = setInterval(() => {
+      setInitialized(true);
+    }, 1000);
+    return () => {
+      clearInterval(init);
+    };
+  }, []);
 
   /** Card Reducer to handle various card actions */
   const cardReducer = (state, action) => {
@@ -86,18 +102,18 @@ function App() {
   /** Custom hook to initiate a new fetch of data once the end of
    * the card list is reached.
    */
-  const useInfiniteScroll = (scrollRef, dispatch) => {
+  const useInfiniteScroll = (scrollRef, dispatch, init) => {
     const scrollObserver = useCallback(
       (node) => {
         new IntersectionObserver((entries) => {
           entries.forEach((en) => {
-            if (en.intersectionRatio > 0) {
+            if (en.intersectionRatio > 0 && init) {
               dispatch({ type: "NEXT_PAGE" });
             }
           });
         }).observe(node);
       },
-      [dispatch]
+      [dispatch, init]
     );
 
     useEffect(() => {
@@ -108,7 +124,7 @@ function App() {
   };
 
   useFetch(pageData, cardDispatch);
-  useInfiniteScroll(scrollTriggerRef, pageDispatch);
+  useInfiniteScroll(scrollTriggerRef, pageDispatch, initialized);
 
   /** Handler for the Search component submit
    * clicking on the 'Go' button expects a value which is then passed a parameter for the 'name' search.
